@@ -1,6 +1,4 @@
-> 公开评审版说明：本文涉及团队数据包或真实运行的描述属于开发验收记录。本公开仓库不分发私有数据集、原文样例或密钥；使用者须自行配置授权资料与模型。
-
-# 设计与实现说明：校园有解 Agent
+# 设计与实现说明：软文工坊 Agent
 
 本文描述当前代码实际实现。两种资料模式共用生成与核验流程；本地模式不是实时 ima 检索，模型审稿也不是事实正确性保证。
 
@@ -70,7 +68,7 @@ sequenceDiagram
 请求参数示例只展示结构，不包含真实内部ID：
 
 ```json
-{"query":"你的知识库名称","cursor":"","limit":20}
+{"query":"任德耀新建华为PC知识库","cursor":"","limit":20}
 ```
 
 `search_knowledge_base` 按返回的 `kb_name` 精确匹配库名，内部使用 `kb_id`。目录请求包括 `knowledge_base_id`、可选 `folder_id`、`cursor` 和 `limit=50`。目录实际字段为 `knowledge_list`；不能照搬知识库搜索的 `info_list`。

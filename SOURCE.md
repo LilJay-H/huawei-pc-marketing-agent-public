@@ -1,6 +1,6 @@
 # 来源与贡献者
 
-本公开评审版来源于团队项目 `wudizky/huawei-pc-marketing-agent` 的提交 `64873120b187d23870e63f3bc245fe92bc887d14`。公开导出日期：2026-10-18。
+本公开评审版来源于团队项目 `wudizky/huawei-pc-marketing-agent` 的提交 `1a9966a1d07f61f729359164d4a38108c5fdf737`。公开导出日期：2026-10-18。
 
 保留最新应用实现，排除私有知识库、内部交接记录、资料引用样例及原仓库历史。当前版本的真实运行边界见 `docs/UI-REDESIGN.md`。
 

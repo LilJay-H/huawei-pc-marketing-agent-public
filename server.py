@@ -7,9 +7,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from agent import ROOT, SCENES, PLATFORMS, env, Ima, retrieve, run_agent
 from writing_harness import scene_cards
 from local_kb import LocalKnowledgeBase
+from jobs import JobQueue
 
 SESSIONS = OrderedDict()
 SESSION_LOCK = threading.Lock()
+JOBS = JobQueue()
+
+
+def allowed_values(name, defaults):
+    return defaults + [value.strip() for value in env(name).split(',') if value.strip()]
 
 
 def remember(result, snapshot_time=None):
@@ -27,6 +33,18 @@ def public(result):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def host_allowed(self):
+        return self.headers.get('Host') in allowed_values('APP_ALLOWED_HOSTS', ['127.0.0.1:8765', 'localhost:8765'])
+
+    def deliver(self, work):
+        if env('APP_ASYNC_JOBS') != '1':
+            return self.reply(public(work()))
+        try:
+            job_id = JOBS.submit(work)
+        except RuntimeError as error:
+            return self.reply({'error': str(error)}, 503)
+        return self.reply(JOBS.read(job_id), 202)
+
     def log_message(self, *args):
         pass
 
@@ -41,8 +59,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path.startswith('/api/jobs/'):
+            if not self.host_allowed():
+                return self.reply({'error': 'Host rejected'}, 403)
+            job = JOBS.read(parsed.path.removeprefix('/api/jobs/'))
+            return self.reply(job if job else {'error': '任务不存在、已过期或服务已重启，请重新生成。'}, 200 if job else 404)
         if parsed.path in ['/api/local-image', '/api/products']:
-            if self.headers.get('Host') not in ['127.0.0.1:8765', 'localhost:8765']:
+            if not self.host_allowed():
                 return self.reply({'error': 'Host rejected'}, 403)
             try:
                 kb = LocalKnowledgeBase(env('LOCAL_KB_PATH', 'knowledge-base/v7'))
@@ -81,10 +104,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         # Local service: block cross-origin requests and oversized input.
-        if self.headers.get('Host') not in ['127.0.0.1:8765', 'localhost:8765']:
+        if not self.host_allowed():
             return self.reply({'error': 'Host rejected'}, 403)
         origin = self.headers.get('Origin')
-        if origin and origin not in ['http://127.0.0.1:8765', 'http://localhost:8765']:
+        if origin and origin not in allowed_values('APP_ALLOWED_ORIGINS', ['http://127.0.0.1:8765', 'http://localhost:8765']):
             return self.reply({'error': 'Origin rejected'}, 403)
         try:
             length = int(self.headers.get('Content-Length', '0'))
@@ -100,9 +123,9 @@ class Handler(BaseHTTPRequestHandler):
                 Ima().kb()
                 return self.reply({'message': '已连接指定 ima 共享知识库'})
             if self.path == '/api/retrieve':
-                return self.reply(public(retrieve(task)))
+                return self.deliver(lambda: retrieve(task))
             if self.path == '/api/generate':
-                return self.reply(public(remember(run_agent(task))))
+                return self.deliver(lambda: remember(run_agent(task)))
             if self.path == '/api/rewrite':
                 with SESSION_LOCK:
                     saved = SESSIONS.get(task.pop('run_id', ''))
@@ -114,10 +137,12 @@ class Handler(BaseHTTPRequestHandler):
                     return self.reply({'error': '型号、版本或资料模式已改变，请重新检索，不能复用旧证据。'}, 400)
                 evidence = {k: old[k] for k in ['documents', 'images', 'warnings', 'search_hits', 'source_kind', 'knowledge_base', 'source_note', 'snapshot_modified_at', 'product_identity'] if k in old}
                 evidence['status'] = 'retrieved'
-                result = run_agent(merged, evidence, old['draft'], mode='snapshot_rewrite')
-                result['parent_run_id'] = old['run_id']
-                result['evidence_started_at'] = old.get('evidence_started_at', old['started_at'])
-                return self.reply(public(remember(result, saved[0])))
+                def rewrite():
+                    result = run_agent(merged, evidence, old['draft'], mode='snapshot_rewrite')
+                    result['parent_run_id'] = old['run_id']
+                    result['evidence_started_at'] = old.get('evidence_started_at', old['started_at'])
+                    return remember(result, saved[0])
+                return self.deliver(rewrite)
             return self.reply({'error': 'Not found'}, 404)
         except RuntimeError as e:
             return self.reply({'error': str(e)}, 400)

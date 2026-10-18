@@ -55,7 +55,12 @@ function syncControls() {
   $('#rewriteHint').hidden = !changed;
   $('#rewriteHint').textContent = '型号、版本或资料来源已改变，请重新检索并生成；改写只能复用原稿的证据。';
   const unavailable = config && !config.model_configured;
-  $('#generate').replaceChildren(icon(unavailable ? 'search' : 'sparkles'), el('span', busy ? '正在处理…' : unavailable ? '检索资料（模型待配置）' : '检索并生成图文'), icon('arrow'));
+  const generateLabel = busy ? '正在处理…' : unavailable ? '检索资料（模型待配置）' : '检索并生成图文';
+  // An input's blur/change can fire between mousedown and click on this button.
+  // Preserve its children when the label is unchanged so that click is not lost.
+  if ($('#generate').textContent.trim() !== generateLabel) {
+    $('#generate').replaceChildren(icon(unavailable ? 'search' : 'sparkles'), el('span', generateLabel), icon('arrow'));
+  }
   $('#generationReadiness').hidden = !unavailable;
   $('#generationReadiness').textContent = '文案模型未配置，本次只能读取资料，不能生成正文。';
   $('#generationTiming').textContent = unavailable ? '完成模型配置并重启服务后，即可生成图文' : '生成与审稿可能需要数分钟';
@@ -71,6 +76,23 @@ async function request(path, body, signal) {
   try { data = await response.json(); } catch { throw new Error('服务返回了无法读取的数据，请确认后端正常运行后重试。'); }
   if (!response.ok) throw new Error(data.error || '服务请求失败（' + response.status + '），请稍后重试。');
   return data;
+}
+async function awaitJob(data, signal) {
+  if (!data?.job_id) return data;
+  if (!/^[a-f0-9]{32}$/.test(data.job_id)) throw new Error('服务返回的任务编号无效。');
+  const jobPath = '/api/jobs/' + data.job_id;
+  while (data.status !== 'completed') {
+    setStatus(data.status === 'queued' ? '正在排队，前面还有 ' + (data.ahead || 0) + ' 个任务。请保留此页面。' : '正在生成与核验，请保留此页面…');
+    await new Promise((resolve, reject) => {
+      if (signal.aborted) return reject(new DOMException('已停止等待', 'AbortError'));
+      const abort = () => { clearTimeout(timer); reject(new DOMException('已停止等待', 'AbortError')); };
+      const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, 1500);
+      signal.addEventListener('abort', abort, {once:true});
+    });
+    data = await request(jobPath, undefined, signal);
+    if (!['queued', 'running', 'completed'].includes(data.status)) throw new Error('任务状态无效，请检查服务。');
+  }
+  return data.result;
 }
 function errorMessage(error) {
   return error instanceof TypeError ? '无法连接后端服务，请在项目目录运行 python server.py 后重试。' : error.message;
@@ -173,7 +195,7 @@ async function run(path, body) {
   const timer = setTimeout(() => setStatus('服务仍在处理中。生成与核验可能需要数分钟，请耐心等待。'), 20000);
   const timeout = setTimeout(() => controller.abort('timeout'), 600000);
   try {
-    const result = await request(path, payload, controller.signal);
+    const result = await awaitJob(await request(path, payload, controller.signal), controller.signal);
     if (!result || typeof result.status !== 'string') throw new Error('服务结果缺少状态信息，请检查后端返回格式。');
     show(result);
     $('#result').hidden = false;
@@ -341,6 +363,17 @@ function show(data) {
 function saveFile(text, type, filename) {
   const url = URL.createObjectURL(new Blob([text], { type })); const link = el('a'); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return; } catch { /* Try the HTTP-compatible path below. */ }
+  }
+  const previous = document.activeElement;
+  const field = el('textarea'); field.value = text; field.setAttribute('readonly', '');
+  field.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.append(field); field.select();
+  try { if (!document.execCommand('copy')) throw new Error('Clipboard unavailable'); }
+  finally { field.remove(); previous?.focus({preventScroll:true}); }
+}
 form.addEventListener('submit', event => { event.preventDefault(); run('/api/generate'); });
 form.addEventListener('invalid', event => { const details = event.target.closest('details'); if (details) details.open = true; }, true);
 form.addEventListener('change', event => { if (event.target.name === 'scene') sceneChanged(); syncControls(); });
@@ -362,7 +395,7 @@ $('#connect').onclick = async () => {
   finally { clearTimeout(timeout); activeRequest = null; syncControls(); }
 };
 $('#copy').onclick = async () => {
-  try { await navigator.clipboard.writeText(markdown); setStatus('已复制文案。' + (lastResult.status === 'needs_review' ? '仍有待解决问题，请查看核验结果。' : '发布前请人工确认。')); }
+  try { await copyText(markdown); setStatus('已复制文案。' + (lastResult.status === 'needs_review' ? '仍有待解决问题，请查看核验结果。' : '发布前请人工确认。')); }
   catch { setStatus('复制失败，请使用「导出 Markdown」保存文案。'); }
 };
 $('#download').onclick = () => { saveFile(markdown, 'text/markdown;charset=utf-8', '校园营销图文-' + (lastResult.task?.platform || '草稿') + '.md'); setStatus('已导出 Markdown，发布前请人工确认。'); };

@@ -6,7 +6,7 @@ from agent import Ima, env, retrieve, run_agent
 
 
 def main():
-    parser = argparse.ArgumentParser(description='校园有解 Agent 测试入口')
+    parser = argparse.ArgumentParser(description='软文工坊 Agent 测试入口')
     parser.add_argument('action', choices=['check', 'retrieve', 'generate'])
     parser.add_argument('--task', type=Path, help='UTF-8 JSON 任务文件')
     parser.add_argument('--source', choices=['ima', 'local'], help='显式选择实时 ima 或本地开发资料')

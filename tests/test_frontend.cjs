@@ -82,6 +82,7 @@ const base = 'http://127.0.0.1:8765';
    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
  });
  await check('Four result sections, safe Markdown and copy/export',async()=>{
+  await page.locator('#requirements').fill('刚输入需求，第一次点击必须提交');
   await page.locator('#generate').click(); await page.locator('#article').waitFor();
   for(const id of ['strategy','evidence','article','verification'])assert.ok(await page.locator('#'+id).isVisible());
   assert.equal(await page.locator('.article-content img').count(),0);assert.equal(await page.evaluate(()=>window.__injected),undefined);
@@ -93,6 +94,21 @@ const base = 'http://127.0.0.1:8765';
   const report=JSON.parse(fs.readFileSync(await audit.path(),'utf8'));assert.equal(report.run_id,fixture.run_id);assert.equal(report.images,undefined);
   await page.locator('#product').fill('另一型号');assert.equal(await page.locator('#rewrite').isDisabled(),true);
   await page.locator('#product').fill(liveTask.product);assert.equal(await page.locator('#rewrite').isDisabled(),false);
+ });
+ await check('HTTP-compatible copying and asynchronous job completion',async()=>{
+  await page.evaluate(()=>{window.testClipboard=navigator.clipboard;Object.defineProperty(navigator,'clipboard',{value:undefined,configurable:true});});
+  await page.locator('#copy').click();
+  assert.match(await page.locator('#status').innerText(),/已复制文案/);
+  assert.equal((await page.evaluate(()=>window.testClipboard.readText())).replace(/\r\n/g,'\n'),fixture.draft.markdown);
+  await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{value:window.testClipboard,configurable:true});delete window.testClipboard;});
+  const jobId='1234567890abcdef1234567890abcdef';let polls=0;
+  response={status:'queued',job_id:jobId,ahead:1};
+  await page.route('**/api/jobs/'+jobId,route=>route.fulfill({json:++polls===1?{status:'running',job_id:jobId}:{status:'completed',job_id:jobId,result:fixture}}));
+  await page.locator('#generate').click();
+  await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('排队'));
+  await page.waitForFunction(()=>document.querySelector('#loading').hidden);
+  assert.equal(polls,2);assert.ok(await page.locator('#article').isVisible());
+  response=structuredClone(fixture);
  });
  await check('Risk findings and mismatched image are visible',async()=>{
   response=structuredClone(fixture);response.status='needs_review';response.verification.facts[0].status='unverified';response.verification.images[0].status='mismatch';response.issues=['事实缺乏证据，需要人工复核'];
