@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.runtime/
+outputs/
+*.log
+local-data/
+knowledge-base/v7/
+
+# Private knowledge materials are never part of the public release.
+knowledge-base/*.zip
+knowledge-base/dataset-manifest.json
+.env.team

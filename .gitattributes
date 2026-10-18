@@ -1,0 +1,2 @@
+# Preserve the supplied dataset byte-for-byte across Windows/Linux clones.
+knowledge-base/*.zip binary

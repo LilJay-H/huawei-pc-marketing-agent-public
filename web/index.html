@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#c7000b">
+  <title>校园有解 · 华为 PC 内容工作台</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳转到创作结果</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/" aria-label="校园有解首页"><span class="brand-mark" aria-hidden="true">华</span><span><strong>校园有解<span class="brand-divider">/</span><span class="brand-sub">华为 PC 内容工作台</span></strong><small>从校园场景出发，让产品表达更有依据</small></span></a>
+      <div class="header-meta"><span class="dev-tag">团队开发版</span><span class="source-badge" id="sourceBadge"><i></i><span>资料来源待确认</span></span></div>
+    </div>
+  </header>
+  <main class="page">
+    <section class="intro" aria-labelledby="pageTitle">
+      <div><p class="eyebrow"><span></span> CAMPUS CONTENT STUDIO</p><h1 id="pageTitle">把校园日常，写成<span>有据可循的种草。</span></h1><p class="intro-copy">选一个真实场景，把产品资料变成适合学生阅读的图文内容。</p></div>
+      <div class="intro-note"><span class="proof-icon" data-icon="shield"></span><div><strong>每一篇，都带着依据</strong><span>场景策略 · 产品原文 · 发布前核验</span></div></div>
+    </section>
+    <div class="layout">
+      <aside class="config-column" aria-label="创作配置">
+        <form id="task" class="panel config-panel">
+          <div class="panel-heading"><div><h2>创作配置</h2><p>先告诉我们，这次为谁写</p></div><span class="heading-icon" data-icon="sliders"></span></div>
+          <fieldset id="taskFields" disabled>
+            <section class="form-section">
+              <h3 class="section-label"><span>01</span>选择产品</h3>
+              <label for="product">产品型号 <span class="required">*</span></label>
+              <input id="product" name="product" list="products" placeholder="选择或输入准确型号" required autocomplete="off" aria-describedby="productHint">
+              <datalist id="products"></datalist><p class="field-hint" id="productHint">型号建议来自当前资料库</p>
+              <details class="compact-details"><summary>补充年份 / 版本 <span class="optional">选填</span></summary><label class="sr-only" for="version">年份 / 版本</label><input id="version" name="version" placeholder="例如：2024 / 鸿蒙版" autocomplete="off"></details>
+            </section>
+            <section class="form-section">
+              <h3 class="section-label"><span>02</span>找到校园场景</h3>
+              <fieldset class="choice-field"><legend class="sr-only">校园场景（必选）</legend><div id="sceneChoices" class="chips scene-chips"></div></fieldset>
+              <div class="scene-hint"><span data-icon="bulb"></span><p id="sceneHint">正在读取场景…</p></div>
+              <details class="compact-details"><summary>细分到学生的具体任务 <span class="optional">自动匹配</span></summary><label class="sr-only" for="micro_scene_id">学生此刻想解决什么？</label><select id="micro_scene_id" name="micro_scene_id"><option value="">按任务自动匹配</option></select></details>
+            </section>
+            <section class="form-section">
+              <h3 class="section-label"><span>03</span>选择发布平台</h3>
+              <fieldset class="choice-field"><legend class="sr-only">发布平台</legend><div id="platformChoices" class="chips platform-chips"></div></fieldset>
+              <label for="requirements">补充需求 <span class="optional">选填</span></label><textarea id="requirements" name="requirements" rows="3" placeholder="专业、常用软件、预算，或这篇内容想强调的事…"></textarea>
+              <details class="advanced"><summary>人群与内容目标 <span class="optional">可调整</span></summary><div class="advanced-body">
+                <label for="audience">目标大学生人群 <span class="required">*</span></label><input id="audience" name="audience" value="准备开学的大学新生" required>
+                <label for="stage">购买阶段</label><select id="stage" name="stage"><option>了解需求</option><option>比较选型</option><option>准备购买</option></select>
+                <label for="goal">内容目标 <span class="required">*</span></label><input id="goal" name="goal" value="帮助选型，引导咨询与到店体验" required>
+              </div></details>
+            </section>
+          </fieldset>
+          <div class="form-actions"><p id="generationReadiness" class="generation-readiness" hidden></p><button class="button primary" type="submit" id="generate" disabled><span data-icon="sparkles"></span><span>检索并生成图文</span><span data-icon="arrow"></span></button><button class="button secondary" type="button" id="retrieve" disabled><span data-icon="search"></span>仅检索产品资料</button><p id="generationTiming">生成与审稿可能需要数分钟</p></div>
+        </form>
+        <section class="panel source-panel" aria-labelledby="sourceTitle"><div class="source-title"><h2 id="sourceTitle"><span data-icon="database"></span>资料与服务</h2><button class="text-button" id="connect" disabled>测试连接</button></div><label class="sr-only" for="source_mode">资料来源</label><select id="source_mode" name="source_mode" form="task" disabled><option value="local">本地 v7 · 开发资料</option><option value="ima">ima · 共享知识库</option></select><p id="sourceHint" class="field-hint">正在读取服务配置…</p><div id="connection" class="connection" role="status">正在检查配置…</div><button id="retryConfig" class="text-button" hidden>重新加载配置</button></section>
+        <p class="aside-note"><span data-icon="lock"></span>内容仅在工作台生成，不会自动发布</p>
+      </aside>
+      <section id="workspace" class="workspace" tabindex="-1" aria-labelledby="workspaceTitle">
+        <div class="workspace-heading"><div><span class="eyebrow muted">YOUR CREATIVE SPACE</span><h2 id="workspaceTitle">内容工作区</h2></div><span id="resultMeta" class="workspace-meta">等待创作</span></div>
+        <div id="setupNotice" class="notice warning" hidden><span data-icon="warning"></span><div><strong>文案模型未配置，目前只能检索资料</strong><p>此时点击按钮不会生成营销文案，也没有后台写作任务在等待。</p><details class="setup-details"><summary>查看如何启用真实写作</summary><ol><li>将团队提供的私密配置文件 .env.team 放到 server.py 同一目录，或在 .env 中填写模型服务地址、API Key 和模型名。</li><li>重启本地服务，再点击「重新检查配置」。不需要将密钥上传 GitHub。</li><li>配置就绪后重新生成；本地资料模式无需 ima 凭证。</li></ol><p id="missingFields"></p></details><button type="button" id="refreshConfig" class="text-button">重新检查配置</button></div></div>
+        <ol class="workflow" aria-label="内容工作流程"><li><span>01</span>场景策略</li><li><span>02</span>知识库依据</li><li><span>03</span>图文编排</li><li><span>04</span>核验交付</li></ol>
+        <div id="status" class="status-line" role="status" aria-live="polite">选择产品和场景，开始第一篇创作</div>
+        <div id="requestError" class="request-error" role="alert" hidden><div><strong>本次请求未完成</strong><p id="errorText"></p></div><button id="retry" class="button secondary">重试请求</button></div>
+        <div id="loading" class="panel loading-panel" hidden><div class="loading-title"><span class="spinner"></span><div><h3 id="loadingTitle">正在检索与创作</h3><p>正在等待服务返回，完成后会展示真实结果。</p></div></div><div class="skeleton sk-title"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton sk-short"></div><div class="sk-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div><button id="cancel" class="text-button">停止等待</button><p class="field-hint">停止等待仅中断页面接收，服务端任务可能继续运行。</p></div>
+        <div id="result">
+          <section class="panel empty-state">
+            <div class="empty-art" aria-hidden="true"><span class="art-orbit orbit-one"></span><span class="art-orbit orbit-two"></span><div class="art-label"><span data-icon="check"></span> 事实有据</div><div class="art-window"><div class="art-window-bar"><i></i><i></i><i></i><span>校园有解</span></div><div class="art-paper"><span class="paper-kicker">每个校园场景，都值得认真写</span><div class="paper-title">让好产品<br>走进<span>真日常。</span></div><div class="paper-line"></div><div class="paper-line short"></div><div class="paper-footer"><span></span> FROM FACTS TO STORIES</div></div></div><div class="art-stamp"><span data-icon="sparkles"></span></div></div>
+            <span class="empty-kicker">一个场景，一篇有依据的内容</span><h3>你的下一篇种草，从这里开始</h3><p>在左侧选择产品、校园场景和发布平台。<br>我们会把场景、事实与表达，串成一篇完整图文。</p>
+            <div class="empty-features"><div><span data-icon="compass"></span><strong>先懂场景</strong><small>找到学生关心的事</small></div><div><span data-icon="book"></span><strong>再找依据</strong><small>回到产品资料原文</small></div><div><span data-icon="shield"></span><strong>交付前核验</strong><small>标出需要确认的内容</small></div></div>
+          </section>
+          <div class="workspace-note"><span data-icon="bulb"></span><p><strong>好内容，从一个具体问题开始。</strong> “每天背电脑换教室”比“推荐一台好电脑”更容易找到有用的表达。</p></div>
+        </div>
+        <div id="exports" class="panel export-bar" hidden><div><strong>把创作带走</strong><span id="exportHint">发布前请人工确认</span></div><div class="export-actions"><button class="button secondary" id="copy"><span data-icon="copy"></span>复制文案</button><button class="button secondary" id="download"><span data-icon="download"></span>导出 Markdown</button><button class="button secondary" id="rewrite"><span data-icon="refresh"></span>按当前要求改写</button><button class="text-button" id="auditExport">导出核验记录</button></div></div>
+        <p id="rewriteHint" class="field-hint" hidden></p>
+      </section>
+    </div>
+    <footer><span><strong>校园有解</strong> · 华为 PC 营销 Agent</span><span>规则检查与模型辅助审稿不等于平台审核结论，发布前请人工确认。</span></footer>
+  </main>
+  <noscript><p class="noscript">请启用 JavaScript 以加载产品资料与创作工作台。</p></noscript>
+</body>
+</html>
